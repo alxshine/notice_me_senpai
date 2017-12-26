@@ -6,7 +6,7 @@ from scipy import signal
 import matplotlib.pyplot as plt
 
 # Load image
-im = Image.open("dataset/dev-dataset-forged/dev_0006.tif")
+im = Image.open("../dataset/dev-dataset-forged/dev_0006.tif")
 arr = np.array(im)
 arr = arr.sum(axis=2) / 3 / arr.max()
 

@@ -5,8 +5,22 @@ import numpy as np
 from scipy import signal
 import matplotlib.pyplot as plt
 
+
+def splitIntoBins(num_bins, original):
+    temp = original - original.min()
+    temp /= temp.max()
+    temp *= num_bins
+    return np.floor(temp).clip(0, num_bins - 1)
+
+# Approach:
+# 1: calculate histograms over sliding windows
+# 2: recreate histograms with autoencoder (trained with all windows)
+# 3: iterate
+# windows with higher error are outliers and thus suspects for splicing
+
+
 # Load image
-im = Image.open("dataset/dev-dataset-forged/dev_0006.tif")
+im = Image.open("dataset/dev-dataset-forged/dev_0005.tif")
 arr = np.array(im)
 arr = arr.sum(axis=2) / 3 / arr.max()
 
@@ -19,94 +33,60 @@ for i in range(arr.shape[0]):
     filtered_x[i] = signal.convolve(arr[i], kernel, mode='same')
     
 for j in range(arr.shape[1]):
-    filtered_y[:, j] = signal.convolve(arr[:, j], kernel, mode='same')
+    filtered_y[:, j] = signal.convolve(arr[:, j], kernel, mode='same') 
 
-# the paper does not clearly explain how their truncation works,
-# we just use three different bins
-num_bins = 2
-filtered_x = np.floor(filtered_x * num_bins).astype(int)
-filtered_y = np.floor(filtered_y * num_bins).astype(int)
+# binning
+num_bins = 3
 
-print("Image binned in x and y, searching for patterns")
+filtered_x = splitIntoBins(num_bins, filtered_x)
+filtered_y = splitIntoBins(num_bins, filtered_y)
 
-# search most occuring pattern in x direction
-patternDict_x = {}
-for i in range(filtered_x.shape[0] - 3):
-    for j in range(filtered_x.shape[1]):
-        pattern = ''.join(str(elem) for elem in filtered_x[i:i + 4, j])
-        try:
-            patternDict_x[pattern] += 1
-        except KeyError:
-            patternDict_x[pattern] = 1
+# search co-occurences in windows
+w = 4
+num_hist_bins = num_bins ** w
+pattern_kernel = num_bins ** np.arange(w)
+pattern_x = np.zeros_like(filtered_x)
+pattern_y = np.zeros_like(filtered_y)
 
-maxCount_x = 0
-targetPattern_x = ""
-for pattern, count in patternDict_x.iteritems():
-    if count > maxCount_x:
-        maxCount_x = count
-        targetPattern_x = pattern
-
-matching_x = np.zeros_like(filtered_x)
-for i in range(matching_x.shape[0] - 3):
-    for j in range(matching_x.shape[1]):
-        pattern = ''.join(str(elem) for elem in filtered_x[i:i + 4, j])
-        if pattern == targetPattern_x:
-            matching_x[i, j] = 1
-
-print("X direction matched")
-
-# same for y direction
-patternDict_y = {}
+for j in range(filtered_x.shape[1]):
+    pattern_x[:, j] = signal.convolve(filtered_x[:, j], pattern_kernel, mode='same')
+    
 for i in range(filtered_y.shape[0]):
-    for j in range(filtered_y.shape[1] - 3):
-        pattern = ''.join(str(elem) for elem in filtered_y[i, j:j + 4])
-        try:
-            patternDict_y[pattern] += 1
-        except KeyError:
-            patternDict_y[pattern] = 1
+    pattern_y[i] = signal.convolve(filtered_y[i], pattern_kernel, mode='same')
 
-# TODO: extract into function
-maxCount_y = 0
-targetPattern_y = ""
-for pattern, count in patternDict_y.iteritems():
-    if count > maxCount_y:
-        maxCount_y = count
-        targetPattern_y = pattern
-# print("Most common pattern is {}, occured {} times".format(targetPattern_y, maxCount_x))
+windows_per_row = int(arr.shape[0] / w)
+windows_per_col = int(arr.shape[1] / w)
+hist_x = np.zeros((windows_per_row * windows_per_col, num_hist_bins))
+hist_y = np.zeros_like(hist_x)
 
-matching_y = np.zeros_like(filtered_y)
-for i in range(matching_y.shape[0]):
-    for j in range(matching_y.shape[1] - 3):
-        pattern = ''.join(str(elem) for elem in filtered_y[i, j:j + 4])
-        if pattern == targetPattern_y:
-            matching_y[i, j] = 1
-        
-print("Y direction matched")
+for i in range(arr.shape[0]):
+    for j in range(arr.shape[1]):
+        window_index = int(i / w * windows_per_row) + int(j / w)
+        hist_x[window_index][int(pattern_x[i, j])] += 1
+        hist_y[window_index][int(pattern_y[i, j])] += 1
 
-#TODO: actually test which is better
-#average pooling
-matching_pooled = ((matching_x + matching_y).astype(float) / 2)
-#OR pooling
-# matching_pooled = np.logical_or(matching_x, matching_y)
+matched_x = np.zeros_like(filtered_x)
+matched_y = np.zeros_like(filtered_y)
 
-# resample and combine areas
-n = 2
-resample_kernel = np.ones((n,n))/n**2
-resampled = signal.convolve2d(matching_pooled, resample_kernel, mode='valid')  
+for i in range(arr.shape[0]):
+    for j in range(arr.shape[1]):
+        window_index = int(i / w * windows_per_row) + int(j / w)
+        matched_x[i, j] = pattern_x[i, j] == np.argmax(hist_x[window_index])
+        matched_y[i, j] = pattern_y[i, j] == np.argmax(hist_y[window_index])
+
+# pooling (average), currently just for visualization
+pooled = (matched_x + matched_y) / 2
 
 plt.figure()
-plt.imshow(matching_x)
+plt.imshow(pattern_x, cmap='gray')
+plt.colorbar()
 plt.title("X")
 
 plt.figure()
-plt.imshow(matching_y)
+plt.imshow(pattern_y, cmap='gray')
 plt.title("Y")
 
 plt.figure()
-plt.imshow(matching_pooled)
-plt.title("Pooled")
-
-plt.figure()
-plt.imshow(resampled)
-plt.title("resampled")
+plt.imshow(pooled, cmap='gray')
+plt.title("pooled")
 plt.show()

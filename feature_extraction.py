@@ -1,9 +1,10 @@
 from __future__ import division
 
-from PIL import Image
+import scipy.ndimage
 import numpy as np
 from scipy import signal
 import matplotlib.pyplot as plt
+import sys
 
 
 def splitIntoBins(num_bins, original):
@@ -19,8 +20,19 @@ def splitIntoBins(num_bins, original):
 # windows with higher error are outliers and thus suspects for splicing
 
 
+#take the image index as parameter
+try:
+    index = int(sys.argv[1])
+except IndexError:
+    index = 3
+
 # Load image
-im = Image.open("dataset/dev-dataset-forged/dev_0005.tif")
+try:
+    im = scipy.ndimage.imread("dataset/dev-dataset-forged/dev_{:04d}.jpg".format(index))
+except IOError:
+    im = scipy.ndimage.imread("dataset/dev-dataset-forged/dev_{:04d}.tif".format(index))
+truth_map = scipy.ndimage.imread("dataset/dev-dataset-maps/dev_{:04d}.bmp".format(index))
+    
 arr = np.array(im)
 arr = arr.sum(axis=2) / 3 / arr.max()
 
@@ -37,6 +49,8 @@ for j in range(arr.shape[1]):
 
 # binning
 num_bins = 3
+if len(sys.argv) >= 3:
+    num_bins = int(sys.argv[2])
 
 filtered_x = splitIntoBins(num_bins, filtered_x)
 filtered_y = splitIntoBins(num_bins, filtered_y)
@@ -78,15 +92,15 @@ for i in range(arr.shape[0]):
 pooled = (matched_x + matched_y) / 2
 
 plt.figure()
-plt.imshow(pattern_x, cmap='gray')
-plt.colorbar()
-plt.title("X")
+plt.imshow(im)
+plt.title("original")
 
 plt.figure()
-plt.imshow(pattern_y, cmap='gray')
-plt.title("Y")
+plt.imshow(truth_map)
+plt.title("truth_map")
 
 plt.figure()
 plt.imshow(pooled, cmap='gray')
 plt.title("pooled")
+
 plt.show()

@@ -27,14 +27,14 @@ def splitIntoBins(num_bins, original):
 try:
     index = int(sys.argv[1])
 except IndexError:
-    index = 5
+    index = 1
 
 # Load image
 try:
-    im = scipy.ndimage.imread("dataset/dev-dataset-forged/dev_{:04d}.jpg".format(index))
+    im = scipy.ndimage.imread("../dataset/dev-dataset-forged/dev_{:04d}.jpg".format(index))
 except IOError:
-    im = scipy.ndimage.imread("dataset/dev-dataset-forged/dev_{:04d}.tif".format(index))
-truth_map = scipy.ndimage.imread("dataset/dev-dataset-maps/dev_{:04d}.bmp".format(index))
+    im = scipy.ndimage.imread("../dataset/dev-dataset-forged/dev_{:04d}.tif".format(index))
+truth_map = scipy.ndimage.imread("../dataset/dev-dataset-maps/dev_{:04d}.bmp".format(index))
     
 arr = np.array(im)
 arr = arr.sum(axis=2) / 3 / arr.max()
@@ -51,7 +51,7 @@ for j in range(arr.shape[1]):
     filtered_y[:, j] = signal.convolve(arr[:, j], kernel, mode='same') 
 
 # binning
-num_bins = 3
+num_bins = 2
 if len(sys.argv) >= 3:
     num_bins = int(sys.argv[2])
 
@@ -85,15 +85,20 @@ for i in range(arr.shape[0]):
         
 # normalize and make zero-mean
 hist_x = hist_x / 81 - 0.5
-hist_y = hist_x / 81 - 0.5
+hist_y = hist_y / 81 - 0.5
+
+pattern_pooles = ((pattern_x + pattern_y).astype(float) / 2)
+n = 4
+resample_kernel = np.ones((n,n))/n**2
+resampled = signal.convolve2d(pattern_pooles, resample_kernel, mode='valid') 
 
 # create autoencoders
 h = int(num_hist_bins * 1.5)
 
 encoder_input = Input(shape=(num_hist_bins,))
-encoded = Dense(h, activation='tanh')(encoder_input)
+encoded = Dense(h, activation='relu')(encoder_input)
 dropout = Dropout(0.5)(encoded)
-decoded = Dense(num_hist_bins, activation='linear')(dropout)
+decoded = Dense(num_hist_bins, activation='sigmoid')(dropout)
 
 autoencoder_x = Model(encoder_input, decoded)
 autoencoder_x.compile(optimizer='adadelta', loss='binary_crossentropy')
@@ -127,9 +132,10 @@ plt.subplot(131)
 plt.imshow(im)
 plt.title("original")
  
+ 
 plt.subplot(132)
-plt.imshow(truth_map)
-plt.title("truth_map")
+plt.imshow(resampled)
+plt.title("pooled pattern")
 
 plt.subplot(133)
 plt.imshow(abs_error)

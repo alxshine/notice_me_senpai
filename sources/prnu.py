@@ -93,15 +93,38 @@ def block_fingerprint(block):
     wb = block[::2, ::2] - denoise(block)
     return wb
 
+# corrletation function with K - camera noise, Wb - block\patch fingerprint, I - image
+# R as the block's resulting 2D correlation to the camera's PRNU
+# build PRNU map (via offset estimation decision) afterwards
+def correlate(K, Wb, I):
+    # zero-padding for discrete fourier transform needed?
+    # again: whole image for I and K or only blocks?
+    #np.asmatrix(K)
+    #np.asmatrix(Wb)
+    #np.asmatrix(I)
+    #frac1 = np.fft.fft2(Wb) * np.fft.fft2(np.conj(I*K))
+    fWb = np.fft.fft2(Wb)
+    fKI = np.fft.fft2(np.conj(I*K))
+    frac1 = signal.convolve2d(fKI, fWb, mode='same')
+    frac2 = np.absolute(frac1)
+    R = np.fft.ifft2(frac1/frac2)
+    return R
+
 # give all camera PRNUs (Ks) as argument
 # test calculating noise per image patch vs noise of whole image and segmenting the whole image
 #   noise into patches in terms of accruacy\time trade-off
-def correlate_blocks(image,sizeX,sizeY):
+def correlate_blocks(image,sizeX,sizeY,K):
     x = np.pad(image,1,pad_with,padder=0.0)
-    result = np.zeros([750,1000])
+    #y = np.pad(K,1,pad_with,padder=0.0)
+    result = np.zeros([sizeX,sizeY])
+    # for utilizing whole image noise instead of per block -> divide into patches after
+    #imageResampled = np.repeat(image,2,axis=0)
+    #imageResampled = np.repeat(imageResampled,2,axis=1)
+    #imageNoise = block_fingerprint(imageResampled)
     for i in range(1,(sizeX+1)):
         for j in range(1,(sizeY+1)):
             pc = x[i,j]
+            # blocks for image
             patch = np.zeros([3,3])
             patch[0,0] = x[i-1,j-1]
             patch[1,0] = x[i,j-1]
@@ -113,23 +136,44 @@ def correlate_blocks(image,sizeX,sizeY):
             patch[1,2] = x[i,j+1]
             patch[2,2] = x[i+1,j+1]
             #print(patch)
+            # blocks for camera noise
+            #Kn = np.zeros([3,3])
+            #Kn[0,0] = y[i-1,j-1]
+            #Kn[1,0] = y[i,j-1]
+            #Kn[2,0] = y[i+1,j-1]
+            #Kn[0,1] = y[i-1,j]
+            #Kn[1,1] = y[i,j]
+            #Kn[2,1] = y[i+1,j]
+            #Kn[0,2] = y[i-1,j+1]
+            #Kn[1,2] = y[i,j+1]
+            #Kn[2,2] = y[i+1,j+1]
             # insert correlation function here
             patchResampled = np.repeat(patch,2,axis=0)
             patchResampled = np.repeat(patchResampled,2,axis=1)
             pc_result = block_fingerprint(patchResampled)
+            R = correlate(K,pc_result,image)
+            print(i,j)
             result[i-1,j-1] = pc_result[1,1]
     plt.figure(figsize=(18, 9))
+    #plt.figure(figsize=(24, 12))
     plt.subplot(131)
+    #plt.subplot(141)
     plt.imshow(image)
     plt.title("original")
     plt.subplot(132)
+    #plt.subplot(142)
     plt.imshow(x)
     plt.title("padded image")
     plt.subplot(133)
+    #plt.subplot(143)
     plt.imshow(result)
     plt.title("resulting image")
+    #plt.subplot(144)
+    #plt.imshow(imageNoise)
+    #plt.title("image noise")
     plt.show()
     #print(image == result)
+    #print(imageNoise == result)
     return result
 
 # Approach:
@@ -146,7 +190,9 @@ def correlate_blocks(image,sizeX,sizeY):
 K2 = getCameraNoise(2,80,1500,2000)
 
 # block test
-result = correlate_blocks(K2,750,1000)
+# result = correlate_blocks(K2,750,1000)
+testpic = arr[::2, ::2]
+result = correlate_blocks(testpic,750,1000,K2)
 
 # tests with the test image
 

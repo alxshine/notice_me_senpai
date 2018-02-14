@@ -38,10 +38,10 @@ def denoise(imarr):
     return wiener
 
 def getCameraNoise(camNo, imageNo, imSizeX, imSizeY):
-    imageStore = np.empty([imageNo-1,imSizeX,imSizeY])
-    imageStore2 = np.empty([imageNo-1,np.int(imSizeX/2),np.int(imSizeY/2)])
-    imageStoreDenoise = np.empty([imageNo-1,np.int(imSizeX/2),np.int(imSizeY/2)])
-    noisePattern = np.empty([imageNo-1,np.int(imSizeX/2),np.int(imSizeY/2)])
+    imageStore = np.zeros([imageNo-1,imSizeX,imSizeY])
+    imageStore2 = np.zeros([imageNo-1,np.int(imSizeX/2),np.int(imSizeY/2)])
+    imageStoreDenoise = np.zeros([imageNo-1,np.int(imSizeX/2),np.int(imSizeY/2)])
+    noisePattern = np.zeros([imageNo-1,np.int(imSizeX/2),np.int(imSizeY/2)])
     for i in range (1, imageNo):
     	imageTemp = scipy.ndimage.imread("../dataset/flat-camera-{:d}/flat_c{:d}_{:03d}.tif".format(camNo,camNo,i))
     	imageTemp = np.array(imageTemp)
@@ -59,9 +59,15 @@ def getCameraNoise(camNo, imageNo, imSizeX, imSizeY):
     	#plt.imshow(noisePattern[i-1])
     	#plt.show()
     print(imageStore)
-    K = (noisePattern[0] * imageStore2[0]) / (imageStore2[0] * imageStore2[0])
+    #K = (noisePattern[0] * imageStore2[0]) / (imageStore2[0] * imageStore2[0])
+    #for i in range (1,len(imageStore2)):
+    	#K *= (noisePattern[i] * imageStore2[i]) / (imageStore2[i] * imageStore2[i])
+    K = (noisePattern[0] * imageStore2[0])
+    K /= (imageStore2[0] * imageStore2[0])
     for i in range (1,len(imageStore2)):
-    	K *= (noisePattern[i] * imageStore2[i]) / (imageStore2[i] * imageStore2[i])
+        K += (noisePattern[i] * imageStore2[i])
+    for i in range (1,len(imageStore2)):
+        (imageStore2[i] * imageStore2[i])
     plt.figure(3)
     plt.imshow(K)
     plt.show()
@@ -81,8 +87,8 @@ def getCameraNoise(camNo, imageNo, imSizeX, imSizeY):
 # 
 #K1 = getCameraNoise(1,80,1500,2000)
 K2 = getCameraNoise(2,80,1500,2000)
-# very skimpy test
-#print(K1 == K2)
+
+# tests with the test image
 
 #(cA, cD) = pywt.dwt(arr, 'db2', 'per')
 #wiener = scipy.signal.wiener(cA)
@@ -99,36 +105,49 @@ wiener = scipy.signal.wiener(cA)
 resample = arr[::2, ::2]
 resampleSub = resample - wiener
 
-# still need to determine an apropiate patch size - chose 3x3 for smalloverlap in y direction
+# split image into overlapping blocks
+
+# patch approach
+# still need to determine an appropiate patch size - chose 3x3 for smalloverlap in y direction
 patches = image.extract_patches_2d(resampleSub, (3, 3))
-print(len(patches))
-print(patches)
+#print(len(patches))
+#print(patches)
 #noise_patch = image.extract_patches_2d(K1, (3, 3))
 noise_patch = image.extract_patches_2d(K2, (3, 3))
 
 prnu_map = np.zeros_like(patches)
-print(patches[0][0+1][0+1])
-print(patches[1][0+1][0+1])
-print(patches[2][0+1][0+1])
+#print(patches[0][0+1][0+1])
+#print(patches[1][0+1][0+1])
+#print(patches[2][0+1][0+1])
 
-prnu_arr = np.empty([len(patches)])
+prnu_arr1 = np.empty([len(patches)])
 
 for i in range(0,len(patches)):
-	if np.isclose(patches[i][0+1][0+1],noise_patch[i][0+1][0+1],atol=0.2):
+	if np.isclose(patches[i][0+1][0+1],noise_patch[i][0+1][0+1],atol=1):
 		prnu_map[i][0+1][0+1] = 1
-		prnu_arr[i] = 1
-	#if patches[i][0+1][0+1] == noise_patch[i][0+1][0+1]:
-		#prnu_map[i][0+1][0+1] = 1
+		prnu_arr1[i] = 1
+	if patches[i][0+1][0+1] == noise_patch[i][0+1][0+1]:
+		prnu_map[i][0+1][0+1] = 1
 	else:
 		prnu_map[i][0+1][0+1] = 0
-		prnu_arr[i] = 0
+		prnu_arr1[i] = 0
 
 print(prnu_map)
+prnu_arr = np.zeros([750,1000])
+
+# block traversal:
+# for each block/patch in image prnu and camera prnu check for corrletaion 
+# if pristine -> block around pixel (block center) coordinates in block (ib,jb) fit with those of the camera
+#               -> 1 in map at pixel's coordinates
+# else fake -> 0 in map at pixel's coordinates
+
 
 #for i in range(0,len(prnu_map)):
 	#prnu_arr = np.append(prnu_arr, prnu_map[i][0+1][0+1])
 
-print(prnu_arr)
+print(len(prnu_arr1))
+
+
 #prnu_arr_map = prnu_arr.reshape(750,1000)
 
 #C1 = scipy.signal.correlate2d(K1, resampleSub)

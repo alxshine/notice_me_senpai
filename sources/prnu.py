@@ -82,8 +82,22 @@ def pad_with(vector, pad_width, iaxis, kwargs):
     return vector
 
 # try different blocksizes -> choice here 3x3
+# block-wise approach:
+# 1. define patched
+# 2. for each patch correltate with phase corr for each camera in function
+# 3. return result for every pixel around which the correlated block is centered (pixel center = pc)
+#       and store in result array of picture size
+# 4. compute offset estimate of result array and populate the prnu map
+
+def block_fingerprint(block):
+    wb = block[::2, ::2] - denoise(block)
+    return wb
+
+# give all camera PRNUs (Ks) as argument
+# test calculating noise per image patch vs noise of whole image and segmenting the whole image
+#   noise into patches in terms of accruacy\time trade-off
 def correlate_blocks(image,sizeX,sizeY):
-    x = np.pad(image,1,pad_with,padder=0)
+    x = np.pad(image,1,pad_with,padder=0.0)
     result = np.zeros([750,1000])
     for i in range(1,(sizeX+1)):
         for j in range(1,(sizeY+1)):
@@ -100,7 +114,10 @@ def correlate_blocks(image,sizeX,sizeY):
             patch[2,2] = x[i+1,j+1]
             #print(patch)
             # insert correlation function here
-            result[i-1,j-1] = pc
+            patchResampled = np.repeat(patch,2,axis=0)
+            patchResampled = np.repeat(patchResampled,2,axis=1)
+            pc_result = block_fingerprint(patchResampled)
+            result[i-1,j-1] = pc_result[1,1]
     plt.figure(figsize=(18, 9))
     plt.subplot(131)
     plt.imshow(image)

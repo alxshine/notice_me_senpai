@@ -74,6 +74,46 @@ def getCameraNoise(camNo, imageNo, imSizeX, imSizeY):
     return K
 
 # re-define functions above for block image
+# padding function for centering blocks per pixel coordinate
+def pad_with(vector, pad_width, iaxis, kwargs):
+    pad_value = kwargs.get('padder', 10)
+    vector[:pad_width[0]] = pad_value
+    vector[-pad_width[1]:] = pad_value
+    return vector
+
+# try different blocksizes -> choice here 3x3
+def correlate_blocks(image,sizeX,sizeY):
+    x = np.pad(image,1,pad_with,padder=0)
+    result = np.zeros([750,1000])
+    for i in range(1,(sizeX+1)):
+        for j in range(1,(sizeY+1)):
+            pc = x[i,j]
+            patch = np.zeros([3,3])
+            patch[0,0] = x[i-1,j-1]
+            patch[1,0] = x[i,j-1]
+            patch[2,0] = x[i+1,j-1]
+            patch[0,1] = x[i-1,j]
+            patch[1,1] = x[i,j]
+            patch[2,1] = x[i+1,j]
+            patch[0,2] = x[i-1,j+1]
+            patch[1,2] = x[i,j+1]
+            patch[2,2] = x[i+1,j+1]
+            #print(patch)
+            # insert correlation function here
+            result[i-1,j-1] = pc
+    plt.figure(figsize=(18, 9))
+    plt.subplot(131)
+    plt.imshow(image)
+    plt.title("original")
+    plt.subplot(132)
+    plt.imshow(x)
+    plt.title("padded image")
+    plt.subplot(133)
+    plt.imshow(result)
+    plt.title("resulting image")
+    plt.show()
+    #print(image == result)
+    return result
 
 # Approach:
 # 1. obtain camera's PRNU (Wn) via Wn = In - D(In) with D(.) being a denoising function (discrete wavelet transformation)
@@ -87,6 +127,9 @@ def getCameraNoise(camNo, imageNo, imSizeX, imSizeY):
 # 
 #K1 = getCameraNoise(1,80,1500,2000)
 K2 = getCameraNoise(2,80,1500,2000)
+
+# block test
+result = correlate_blocks(K2,750,1000)
 
 # tests with the test image
 

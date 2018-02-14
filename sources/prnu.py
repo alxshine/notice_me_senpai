@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import sys
 import pywt
 from sklearn.feature_extraction import image
+from numpy import unravel_index
 
 try:
     index = int(sys.argv[1])
@@ -96,7 +97,7 @@ def block_fingerprint(block):
 # corrletation function with K - camera noise, Wb - block\patch fingerprint, I - image
 # R as the block's resulting 2D correlation to the camera's PRNU
 # build PRNU map (via offset estimation decision) afterwards
-def correlate(K, Wb, I):
+def correlate(K, Wb, I, pc):
     # zero-padding for discrete fourier transform needed?
     # again: whole image for I and K or only blocks?
     #np.asmatrix(K)
@@ -108,7 +109,18 @@ def correlate(K, Wb, I):
     frac1 = signal.convolve2d(fKI, fWb, mode='same')
     frac2 = np.absolute(frac1)
     R = np.fft.ifft2(frac1/frac2)
-    return R
+    offset_estimate = unravel_index(np.argmax(R),R.shape)
+    print(R)
+    print(len(R))
+    print(offset_estimate)
+    ibf, jbf = offset_estimate
+    # build map -> return 1 only if PRNU corresponds to block centered around ib,jb - the center pixel coordinates
+    #           -> return 0 if it does not pass the test
+    if (np.array_equal([ibf,jbf],pc)):
+    #if (np.array_equal([ibf,jbf],[1,1])):
+        return 1
+    else:
+        return 0
 
 # give all camera PRNUs (Ks) as argument
 # test calculating noise per image patch vs noise of whole image and segmenting the whole image
@@ -117,6 +129,8 @@ def correlate_blocks(image,sizeX,sizeY,K):
     x = np.pad(image,1,pad_with,padder=0.0)
     #y = np.pad(K,1,pad_with,padder=0.0)
     result = np.zeros([sizeX,sizeY])
+    # for PRNU map
+    Mprnu = np.zeros([sizeX,sizeY])
     # for utilizing whole image noise instead of per block -> divide into patches after
     #imageResampled = np.repeat(image,2,axis=0)
     #imageResampled = np.repeat(imageResampled,2,axis=1)
@@ -151,26 +165,31 @@ def correlate_blocks(image,sizeX,sizeY,K):
             patchResampled = np.repeat(patch,2,axis=0)
             patchResampled = np.repeat(patchResampled,2,axis=1)
             pc_result = block_fingerprint(patchResampled)
-            R = correlate(K,pc_result,image)
+            #R = correlate(K,pc_result,image,pc)
+            Mprnu[i-1][j-1] = correlate(K,pc_result,image,[i,j])
             print(i,j)
+            print(Mprnu[i-1][j-1])
             result[i-1,j-1] = pc_result[1,1]
-    plt.figure(figsize=(18, 9))
-    #plt.figure(figsize=(24, 12))
-    plt.subplot(131)
-    #plt.subplot(141)
+    #plt.figure(figsize=(18, 9))
+    plt.figure(figsize=(24, 12))
+    #plt.subplot(131)
+    plt.subplot(141)
     plt.imshow(image)
     plt.title("original")
-    plt.subplot(132)
-    #plt.subplot(142)
+    #plt.subplot(132)
+    plt.subplot(142)
     plt.imshow(x)
     plt.title("padded image")
-    plt.subplot(133)
-    #plt.subplot(143)
+    #plt.subplot(133)
+    plt.subplot(143)
     plt.imshow(result)
     plt.title("resulting image")
     #plt.subplot(144)
     #plt.imshow(imageNoise)
     #plt.title("image noise")
+    plt.subplot(144)
+    plt.imshow(Mprnu)
+    plt.title("PRNU map")
     plt.show()
     #print(image == result)
     #print(imageNoise == result)
@@ -186,13 +205,22 @@ def correlate_blocks(image,sizeX,sizeY,K):
 # Load camera flat images
 # selected images: to be selected
 # 
-#K1 = getCameraNoise(1,80,1500,2000)
-K2 = getCameraNoise(2,80,1500,2000)
+#K1 = getCameraNoise(1,100,1500,2000)
+K2 = getCameraNoise(2,100,1500,2000)
+#K3 = getCameraNoise(3,100,1500,2000)
+#K4 = getCameraNoise(4,100,1500,2000)
 
 # block test
 # result = correlate_blocks(K2,750,1000)
 testpic = arr[::2, ::2]
 result = correlate_blocks(testpic,750,1000,K2)
+
+# for a quicker test
+#testpic = arr[::10, ::10]
+#KResampled = np.repeat(K2,2,axis=0)
+#KResampled = np.repeat(K1,2,axis=0)
+#KResampled = np.repeat(KResampled,2,axis=1)
+#result = correlate_blocks(testpic,75,100,KResampled[::10,::10])
 
 # tests with the test image
 

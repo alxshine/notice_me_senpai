@@ -127,8 +127,36 @@ def getCameraNoise(camNo, imageNo, imSizeX, imSizeY):
     plt.show()
     return K
 
+# retrieve noise of a given camera via a given number of images (with given resolution)
+# and a specific noise mode
+# showMode determines wether extracted camera prnu is shown
+def camera_noise(camNo, noIm, imX, imY, mode, showMode):
+	images = np.zeros([noIm,imX,imY])
+	denoised = np.zeros([noIm,imX,imY])
+	patterns = np.zeros([noIm,imX,imY])
+	for i in range(1, noIm+1):
+		im = scipy.ndimage.imread("../dataset/flat-camera-{:d}/flat_c{:d}_{:03d}.tif".format(camNo,camNo,i))
+		im = np.array(im)
+		im = im.sum(axis=2)/3/im.max()
+		images[i-1] = im
+		denoised[i-1] = denoise(im,mode)
+		patterns[i-1] = im - denoised[i-1]
+	print(len(images))
+	K1 = (patterns[0] * images[0])
+	K2 = (images[0] * images[0])
+	for i in range (1,len(images)):
+		K1 += (patterns[i]*images[i])
+	for i in range (1,len(images)):
+		K2 += (images[0] * images[0])
+	K = K1/K2
+	if(showMode):
+		plt.figure(3)
+		plt.imshow(K)
+		plt.show()
+	return K
+
 denoised = denoise(arr,4)
-#K1 = getCameraNoise(1,100,1500,2000)
+K1 = camera_noise(1,20,1500,2000,0,1)
 #K2 = getCameraNoise(2,100,1500,2000)
 #K3 = getCameraNoise(3,100,1500,2000)
 #K4 = getCameraNoise(4,100,1500,2000)

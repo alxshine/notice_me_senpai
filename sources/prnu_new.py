@@ -93,40 +93,6 @@ def denoise(imarr,mode):
     	plt.show()
     return d
 
-def getCameraNoise(camNo, imageNo, imSizeX, imSizeY):
-    imageStore = np.zeros([imageNo-1,imSizeX,imSizeY])
-    imageStore2 = np.zeros([imageNo-1,np.int(imSizeX/2),np.int(imSizeY/2)])
-    imageStoreDenoise = np.zeros([imageNo-1,np.int(imSizeX/2),np.int(imSizeY/2)])
-    noisePattern = np.zeros([imageNo-1,np.int(imSizeX/2),np.int(imSizeY/2)])
-    for i in range (1, imageNo):
-    	imageTemp = scipy.ndimage.imread("../dataset/flat-camera-{:d}/flat_c{:d}_{:03d}.tif".format(camNo,camNo,i))
-    	imageTemp = np.array(imageTemp)
-    	imageTemp = imageTemp.sum(axis=2) / 3 / imageTemp.max()
-    	imageStore[i-1] = imageTemp
-    	#resample before to conserve image resolution?
-    	imageStore2[i-1] = imageTemp[::2, ::2]
-    	imageStoreDenoise[i-1] = denoise(imageTemp)
-    	noisePattern[i-1] = imageTemp[::2, ::2] - imageStoreDenoise[i-1]
-    	#plt.figure(2,figsize=(18, 9))
-    	#plt.subplot(231)
-    	#plt.imshow(imageStore[i-1])
-    	#plt.subplot(232)
-    	#plt.imshow(imageStoreDenoise[i-1])
-    	#plt.subplot(233)
-    	#plt.imshow(noisePattern[i-1])
-    	#plt.show()
-    print(imageStore)
-    K = (noisePattern[0] * imageStore2[0])
-    K /= (imageStore2[0] * imageStore2[0])
-    for i in range (1,len(imageStore2)):
-        K += (noisePattern[i] * imageStore2[i])
-    for i in range (1,len(imageStore2)):
-        (imageStore2[i] * imageStore2[i])
-    plt.figure(3)
-    plt.imshow(K)
-    plt.show()
-    return K
-
 # retrieve noise of a given camera via a given number of images (with given resolution)
 # and a specific noise mode
 # showMode determines wether extracted camera prnu is shown
@@ -155,8 +121,35 @@ def camera_noise(camNo, noIm, imX, imY, mode, showMode):
 		plt.show()
 	return K
 
+# compair, plot and return noise patterns of each camera
+# comairing plotting only works for 4 cameras!
+def compair_camera_noise(noCam, noIm, imX, imY, mode):
+	noises = np.zeros([noCam,imX,imY])
+	for i in range(1, noCam+1):
+		noises[i-1] = camera_noise(i, noIm, imX, imY, mode, 0)
+	if(np.equal(noCam,4)):
+		print(np.array_equal(noises[0],noises[1]))
+		print(np.array_equal(noises[1],noises[2]))
+		print(np.array_equal(noises[2],noises[3]))
+		plt.figure(2,figsize=(18, 9))
+		plt.subplot(221)
+		plt.imshow(noises[0])
+		plt.title("prnu camera 1")
+		plt.subplot(222)
+		plt.imshow(noises[1])
+		plt.title("prnu camera 2")
+		plt.subplot(223)
+		plt.imshow(noises[2])
+		plt.title("prnu camera 3")
+		plt.subplot(224)
+		plt.imshow(noises[3])
+		plt.title("prnu camera 4")
+		plt.show()
+	return noises
+
+
 denoised = denoise(arr,4)
-K1 = camera_noise(1,20,1500,2000,0,1)
-#K2 = getCameraNoise(2,100,1500,2000)
-#K3 = getCameraNoise(3,100,1500,2000)
-#K4 = getCameraNoise(4,100,1500,2000)
+K1 = camera_noise(1,5,1500,2000,0,1)
+noises = compair_camera_noise(4,5,1500,2000,0)
+print(np.array_equal(noises[0],K1))
+

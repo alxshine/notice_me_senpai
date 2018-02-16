@@ -147,9 +147,31 @@ def compair_camera_noise(noCam, noIm, imX, imY, mode):
 		plt.show()
 	return noises
 
+# padding function to aid computing prnu noise centered around each pixel
+def pad_with(vector, pad_width, iaxis, kwargs):
+    pad_value = kwargs.get('padder', 10)
+    vector[:pad_width[0]] = pad_value
+    vector[-pad_width[1]:] = pad_value
+    return vector
 
-denoised = denoise(arr,4)
-K1 = camera_noise(1,5,1500,2000,0,1)
-noises = compair_camera_noise(4,5,1500,2000,0)
-print(np.array_equal(noises[0],K1))
+# returns padded and patched version of image 
+# pX and pY should be symmetrical and odd to be suitable for centering
+def patch_image(im, pX, pY):
+	padded = np.pad(im,1,pad_with,padder=0.0)
+	patches = image.extract_patches_2d(padded,(pX,pY))
+	print(len(patches))
+	# TODO: image size as argument and patches center variable!
+	center_pixels = np.zeros([1500*2000])
+	for i in range(0,len(patches)):
+		center_pixels[i] = patches[i][1][1]
+	center_pixels = center_pixels.reshape(1500,2000)
+	return patches, center_pixels
+
+denoised = denoise(arr,0)
+noise_image = np.subtract(arr,denoised)
+#K1 = camera_noise(1,5,1500,2000,0,1)
+#noises = compair_camera_noise(4,5,1500,2000,0)
+#print(np.array_equal(noises[0],K1))
+patched_image, center_pixels = patch_image(denoised,3,3)
+#print(np.array_equal(denoised,center_pixels))
 

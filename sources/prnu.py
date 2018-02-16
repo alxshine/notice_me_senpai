@@ -46,7 +46,7 @@ def getCameraNoise(camNo, imageNo, imSizeX, imSizeY):
     for i in range (1, imageNo):
     	imageTemp = scipy.ndimage.imread("../dataset/flat-camera-{:d}/flat_c{:d}_{:03d}.tif".format(camNo,camNo,i))
     	imageTemp = np.array(imageTemp)
-    	imageTemp = imageTemp.sum(axis=2) / 3 / arr.max()
+    	imageTemp = imageTemp.sum(axis=2) / 3 / imageTemp.max()
     	imageStore[i-1] = imageTemp
     	imageStore2[i-1] = imageTemp[::2, ::2]
     	imageStoreDenoise[i-1] = denoise(imageTemp)

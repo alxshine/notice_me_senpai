@@ -10,9 +10,15 @@ from sklearn.feature_extraction import image
 from numpy import unravel_index
 
 try:
-    index = int(sys.argv[1])
+    mode = int(sys.argv[1])
+except IndexError:
+    mode = 0
+
+try:
+    index = int(sys.argv[2])
 except IndexError:
     index = 1
+
 
 # Load test image
 try:
@@ -167,7 +173,8 @@ def patch_image(im, pX, pY):
 	center_pixels = center_pixels.reshape(1500,2000)
 	return patches, center_pixels
 
-denoised = denoise(arr,0)
+
+denoised = denoise(arr,mode)
 noise_image = np.subtract(arr,denoised)
 #K1 = camera_noise(1,5,1500,2000,0,1)
 #noises = compair_camera_noise(4,5,1500,2000,0)

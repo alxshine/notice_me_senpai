@@ -12,12 +12,12 @@ from numpy import unravel_index
 try:
     mode = int(sys.argv[1])
 except IndexError:
-    mode = 0
+    mode = 4
 
 try:
     index = int(sys.argv[2])
 except IndexError:
-    index = 1
+    index = 5
 
 
 # Load test image

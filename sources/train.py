@@ -1,7 +1,7 @@
 import numpy as np
 import scipy.ndimage
 from keras.models import Sequential
-from keras.layers import Dense, Conv2D, BatchNormalization, Activation, MaxPooling2D, Dropout, UpSampling2D, Conv2DTranspose, Flatten, Reshape
+from keras.layers import Dense, Conv2D, BatchNormalization, Activation, MaxPooling2D, Dropout, UpSampling2D, Conv2DTranspose, Flatten, Reshape, Cropping2D
 
 #load images and ground-truth maps
 images = np.load("../dataset/extracted.npy")
@@ -104,14 +104,25 @@ model.add(Dropout(0.5))
 model.add(Conv2D(2, 1, padding='same'))
 model.add(Activation("relu"))
 print(model.layers[-1].output_shape)
-model.add(Conv2D(1, (2,2), padding='same', activation="sigmoid"))
-
-#model.add(Flatten())
-#model.add(Dense(750, activation='sigmoid'))
+#model.add(Conv2D(1, (2,2), padding='same', activation="sigmoid"))
 
 #model.add(UpSampling2D(2))
 #model.add(Activation("relu"))
+
 #model.add(Conv2DTranspose(2,kernel_size=(2,2)))
+#model.add(Activation("relu"))
+#model.add(Conv2DTranspose(2,kernel_size=(2,2)))
+#model.add(Activation("relu"))
+#model.add(Conv2DTranspose(2,kernel_size=(8,8)))
+#model.add(Activation("relu"))
+
+# maybe add some deconv (or in keras terms conv2dtranspose layers in between the upsampling)
+model.add(UpSampling2D(2))
+model.add(UpSampling2D(2))
+model.add(UpSampling2D(8))
+
+# cropping neccassary for fitting the input image's size to the target truth map
+model.add(Cropping2D((2,8)))
 
 #model.add(UpSampling2D(size=(2,2)))
 #model.add(Activation("relu"))
@@ -127,6 +138,7 @@ model.add(Conv2D(1, (2,2), padding='same', activation="sigmoid"))
 #model.add(Activation("softmax"))
 #model.add(Conv2DTranspose(2,kernel_size=(2,2)))
 #model.add(Conv2DTranspose(2,kernel_size=(2,2)))
+model.add(Conv2D(1, (2,2), padding='same', activation="sigmoid"))
 
 model.compile("SGD", loss="binary_crossentropy", metrics=['accuracy'])
 
@@ -141,10 +153,10 @@ x_test = np.zeros((50, 1500, 2000, 1))
 print(x_test.shape)
 
 #y_train = np.zeros((750, 500, 667, 1))
-#y_train = np.zeros([750, 1500, 2000, 1])
+y_train = np.zeros([750, 1500, 2000, 1])
 
 # preliminary y_train
-y_train = np.zeros([750, 47, 63, 1])
+#y_train = np.zeros([750, 47, 63, 1])
 
 #y_train = maps[:750]
 #y_train = np.zeros((750))

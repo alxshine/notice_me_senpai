@@ -7,10 +7,17 @@ if __name__ == "__main__":
     num_images = 800
     width = 2000
     height = 1500
-    resample_rate = 3
+    #resample_rate = 3
     test = scipy.ndimage.imread("../dataset/dev-dataset-maps/dev_0001.bmp")
-    test = test[::resample_rate, ::resample_rate]
+    #test = test[::resample_rate, ::resample_rate]
     extracted = np.zeros((800, test.shape[0], test.shape[1]))
+
+    im = test.sum()/3/test.max()
+
+    plt.figure(3)
+    plt.imshow(test)
+    plt.show()
+    print(test.shape)
 
     for index in range(num_images):
         print("Extracting features from image {:04d}\r".format(index), end="")
@@ -20,14 +27,9 @@ if __name__ == "__main__":
         except IOError:
             im = scipy.ndimage.imread("../dataset/dev-dataset-maps/dev_{:04d}.tif".format(index+1))
 
-        im = im / 3 / im.max()
-        im = im[::resample_rate,::resample_rate]
+        #im = im.sum() / 3 / im.max()
+        #im = im[::resample_rate,::resample_rate]
 
         extracted[index] = im
-
-        if np.equal(index,4):
-            plt.figure(3)
-            plt.imshow(im)
-            plt.show()
 
     np.save("maps.npy", extracted)

@@ -48,9 +48,9 @@ if __name__ == "__main__":
     num_images = 800
     width = 2000
     height = 1500
-    resample_rate = 3
+    #resample_rate = 3
     test = scipy.ndimage.imread("../dataset/dev-dataset-forged/dev_0001.tif")
-    test = test[::resample_rate, ::resample_rate]
+    #test = test[::resample_rate, ::resample_rate]
     extracted = np.zeros((800, test.shape[0], test.shape[1]))
 
     for index in range(num_images):
@@ -62,7 +62,7 @@ if __name__ == "__main__":
             im = scipy.ndimage.imread("../dataset/dev-dataset-forged/dev_{:04d}.tif".format(index+1))
 
         im = im.sum(axis=2) / 3 / im.max()
-        im = im[::resample_rate,::resample_rate]
+        #im = im[::resample_rate,::resample_rate]
 
         extracted[index] = spliceDetection(im)
 

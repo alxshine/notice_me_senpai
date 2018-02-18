@@ -102,18 +102,20 @@ model.add(Activation("relu"))
 model.add(Dropout(0.5))
 
 model.add(Conv2D(2, 1, padding='same'))
+model.add(Activation("relu"))
 print(model.layers[-1].output_shape)
+model.add(Conv2D(1, (2,2), padding='same', activation="sigmoid"))
 
 #model.add(Flatten())
-#model.add(Dense(1, activation='sigmoid'))
+#model.add(Dense(750, activation='sigmoid'))
 
-model.add(UpSampling2D(2))
-model.add(Activation("relu"))
+#model.add(UpSampling2D(2))
+#model.add(Activation("relu"))
 #model.add(Conv2DTranspose(2,kernel_size=(2,2)))
 
-model.add(UpSampling2D(size=(2,2)))
-model.add(Activation("relu"))
-model.add(UpSampling2D(size=(8,8)))
+#model.add(UpSampling2D(size=(2,2)))
+#model.add(Activation("relu"))
+#model.add(UpSampling2D(size=(8,8)))
 
 # addition layer 1
 # deconvolution (2x)
@@ -129,9 +131,9 @@ model.add(UpSampling2D(size=(8,8)))
 model.compile("SGD", loss="binary_crossentropy", metrics=['accuracy'])
 
 #x_train = np.zeros((750, 500, 667, 1))
-#x_train = np.zeros([750, 1500, 2000, 1])
-x_train = images[:750]
-x_train = np.reshape(x_train, (750,1500,2000,1))
+x_train = np.zeros([750, 1500, 2000, 1])
+#x_train = images[:750]
+#x_train = np.reshape(x_train, (750,1500,2000,1))
 print(x_train.shape)
 
 x_test = np.zeros((50, 1500, 2000, 1))
@@ -140,8 +142,13 @@ print(x_test.shape)
 
 #y_train = np.zeros((750, 500, 667, 1))
 #y_train = np.zeros([750, 1500, 2000, 1])
-y_train = maps[:750]
-y_train = np.reshape(y_train, (750,1500,2000,1))
+
+# preliminary y_train
+y_train = np.zeros([750, 47, 63, 1])
+
+#y_train = maps[:750]
+#y_train = np.zeros((750))
+#y_train = np.reshape(y_train, (750,1500,2000,1))
 print(y_train.shape)
 
 y_test = np.zeros((50, 1500, 2000, 1))

@@ -1,4 +1,5 @@
 import sys
+import matplotlib.pyplot as plt
 import numpy as np
 import scipy.ndimage
 from keras.models import Sequential
@@ -16,12 +17,12 @@ maps = np.load("../dataset/maps.npy")
 model = Sequential()
 
 #convolution
-model.add(Conv2D(64, 3, input_shape=(1500, 2000, 1), padding='same'))
+model.add(Conv2D(12, 3, input_shape=(750, 1000, 1), padding='same'))
 model.add(Activation("relu"))
-# model.add(MaxPooling2D(pool_size=(2,2), padding='same'))
+model.add(MaxPooling2D(pool_size=(2,2), padding='same'))
 
-# model.add(Conv2D(128, 3, padding='same'))
-# model.add(Activation("relu"))
+model.add(Conv2D(24, 3, padding='same'))
+model.add(Activation("relu"))
 # model.add(MaxPooling2D(pool_size=(2,2), padding='same'))
 
 # model.add(Conv2D(256, 3, padding='same'))
@@ -33,12 +34,12 @@ model.add(Activation("relu"))
 
 # model.add(UpSampling2D(2))
 
-# model.add(Conv2DTranspose(128, 3, padding='same'))
-# model.add(Activation("relu"))
+model.add(Conv2DTranspose(24, 3, padding='same'))
+model.add(Activation("relu"))
 
-# model.add(UpSampling2D(2))
+model.add(UpSampling2D(2))
 
-model.add(Conv2DTranspose(64, 3, padding='same'))
+model.add(Conv2DTranspose(12, 3, padding='same'))
 model.add(Activation("relu"))
 
 model.add(Conv2DTranspose(1, 3, padding='same'))
@@ -48,9 +49,30 @@ model.compile("SGD", loss="binary_crossentropy", metrics=['accuracy'])
 
 #generate train and test sets 
 
-x_train = np.zeros([750, 1500, 2000, 1])
-x_test = np.zeros((50, 1500, 2000, 1))
-y_train = np.zeros([750, 1500, 2000, 1])
-y_test = np.zeros((50, 1500, 2000, 1))
+num_samples = 750
 
-model.fit(x=x_train, y=y_train, batch_size=1)
+x_train = np.zeros([num_samples, 750, 1000, 1])
+y_train = np.zeros([num_samples, 750, 1000, 1])
+
+x_train[:,:,:,0] = images[:num_samples,:,:]
+y_train[:,:,:,0] = maps[:num_samples,:,:]
+
+
+model.fit(x=x_train, y=y_train, batch_size=4)
+
+prediction = model.predict(x_train[6:7])
+
+plt.figure()
+plt.subplot(131)
+plt.imshow(x_train[6,:,:,0])
+plt.title("image")
+
+plt.subplot(132)
+plt.imshow(y_train[6,:,:,0])
+plt.title("map")
+
+plt.subplot(133)
+plt.imshow(prediction[0,:,:,0])
+plt.title("prediction")
+
+plt.show()

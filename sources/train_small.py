@@ -4,6 +4,8 @@ import numpy as np
 import scipy.ndimage
 from keras.models import Sequential
 from keras.layers import Dense, Conv2D, BatchNormalization, Activation, MaxPooling2D, Dropout, UpSampling2D, Conv2DTranspose, Flatten, Reshape, Cropping2D
+from keras.utils import *
+from keras.models import load_model
 
 #load images and ground-truth maps
 images = np.load("../dataset/extracted.npy")
@@ -45,6 +47,7 @@ model.add(Activation("relu"))
 model.add(Conv2DTranspose(1, 3, padding='same'))
 model.add(Activation("sigmoid"))
 
+# consider changing optimization function
 model.compile("SGD", loss="binary_crossentropy", metrics=['accuracy'])
 
 #generate train and test sets 
@@ -59,6 +62,8 @@ y_train[:,:,:,0] = maps[:num_samples,:,:]
 
 
 model.fit(x=x_train, y=y_train, batch_size=4)
+
+model.save('small.h5')
 
 prediction = model.predict(x_train[6:7])
 

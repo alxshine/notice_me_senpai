@@ -11,7 +11,6 @@ maps = np.load("../dataset/maps.npy")
 # model from paper is inspired by (and actually a modified version of) the VGG16 convnet
 # VGG16 source code in keras: https://github.com/keras-team/keras/blob/master/keras/applications/vgg16.py
 #
-
 model = Sequential()
 
 #Conv1

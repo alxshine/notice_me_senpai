@@ -66,5 +66,5 @@ if __name__ == "__main__":
 
         extracted[index] = spliceDetection(im)
 
-    np.save("extracted.npy", extracted)
+    np.save("../dataset/extracted.npy", extracted)
 

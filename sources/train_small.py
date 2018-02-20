@@ -19,13 +19,17 @@ maps = np.load("../dataset/maps.npy")
 model = Sequential()
 
 #convolution
-model.add(Conv2D(6, 3, input_shape=(750, 1000, 1), padding='same'))
+model.add(Conv2D(18, 3, input_shape=(750, 1000, 1), padding='same'))
 model.add(Activation("relu"))
 model.add(MaxPooling2D(pool_size=(2,2), padding='same'))
 
-model.add(Conv2D(12, 3, padding='same'))
+model.add(Conv2D(30, 3, padding='same'))
 model.add(Activation("relu"))
-#model.add(MaxPooling2D(pool_size=(2,2), padding='same'))
+model.add(MaxPooling2D(pool_size=(2,2), padding='same'))
+
+model.add(Conv2D(54, 3, padding='same'))
+model.add(Activation("relu"))
+model.add(MaxPooling2D(pool_size=(2,2), padding='same'))
 
 #model.add(Conv2D(256, 3, padding='same'))
 #model.add(Activation("relu"))
@@ -34,24 +38,30 @@ model.add(Activation("relu"))
 #model.add(Conv2DTranspose(256, 3, padding='same'))
 #model.add(Activation("relu"))
 
-#model.add(UpSampling2D(2))
+model.add(UpSampling2D(2))
 
-model.add(Conv2DTranspose(12, 3, padding='same'))
+model.add(Conv2DTranspose(54, 3, padding='same'))
 model.add(Activation("relu"))
 
 model.add(UpSampling2D(2))
 
-model.add(Conv2DTranspose(6, 3, padding='same'))
+model.add(Conv2DTranspose(30, 3, padding='same'))
+model.add(Activation("relu"))
+
+model.add(UpSampling2D(2))
+
+model.add(Conv2DTranspose(18, 3, padding='same'))
 model.add(Activation("relu"))
 
 #model.add(UpSampling2D(2))
 
-#model.add(Cropping2D((1,0)))
+model.add(Cropping2D((1,0)))
 model.add(Conv2DTranspose(1, 3, padding='same'))
 #model.add(Conv2D(1, 3, padding='same'))
 model.add(Activation("sigmoid"))
 
 # consider changing optimization function
+# cosine_proximity kinda works as well
 model.compile("SGD", loss="hinge", metrics=['accuracy'])
 
 #generate train and test sets 

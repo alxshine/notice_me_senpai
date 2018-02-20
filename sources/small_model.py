@@ -30,10 +30,7 @@ model = load_model('small.h5')
 
 def image_test(imageNo):
 	imageNo -= 1
-	if np.equal(imageNo,0):
-		prediction = model.predict(x_train[imageNo-1:imageNo])
-	else:
-		prediction = model.predict(x_train[imageNo:imageNo])
+	prediction = model.predict(x_train[imageNo:imageNo+1])
 	plt.figure()
 	plt.subplot(131)
 	plt.imshow(images[imageNo])

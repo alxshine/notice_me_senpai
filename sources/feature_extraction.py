@@ -66,5 +66,11 @@ if __name__ == "__main__":
 
         extracted[index] = spliceDetection(im)
 
-    np.save("../dataset/extracted.npy", extracted)
+    x = np.zeros([num_images, 750, 1000, 1])
+    x[:,:,:,0] = extracted
+    #normalize
+    x -= x.min()
+    x /= x.max()
+
+    np.save("../dataset/extracted.npy", x)
 

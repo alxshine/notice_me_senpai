@@ -16,4 +16,11 @@ for index in range(num_images):
     im = im[::resample_rate, ::resample_rate]
     resized[index] = im
 
-np.save("../dataset/maps.npy", resized)
+y = np.zeros([num_images, test.shape[0], test.shape[1], 1])
+y[:,:,:,0] = resized
+
+#normalize
+y -= y.min()
+y /= y.max()
+
+np.save("../dataset/maps.npy", y)

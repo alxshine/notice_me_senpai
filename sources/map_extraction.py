@@ -32,4 +32,4 @@ if __name__ == "__main__":
 
         extracted[index] = im
 
-    np.save("maps.npy", extracted)
+    np.save("../dataset/maps.npy", extracted)

@@ -26,11 +26,21 @@ y_train[:,:,:,0] = maps[:num_samples,:,:]
 # Import saved model 
 #
 print("Loading model...")
-model = load_model('small.h5')
+# select saved model
+try:
+    mode = int(sys.argv[1])
+except IndexError:
+    mode = 1
+
+if np.equal(mode,0):
+	model = load_model('small.h5')
+else:
+	model = load_model('small_functional.h5')
 
 def image_test(imageNo):
 	imageNo -= 1
 	prediction = model.predict(x_train[imageNo:imageNo+1])
+	#really skimpy threshold wich should e more fancy and moved to the actual model
 	#im = np.zeros([750,1000])
 	#for i in range(0,750):
 	#	for j in range(0,1000):

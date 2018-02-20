@@ -58,7 +58,7 @@ model = Model(inputs=input_img, outputs=y)
 
 model.compile(optimizer='SGD', loss='hinge', metrics=['accuracy'])
 
-model.fit(x_train, y_train, epochs=2, batch_size=8, validation_split=0.07, shuffle=True)
+model.fit(x_train, y_train, epochs=20, batch_size=8, validation_split=0.07, shuffle=True)
 
 model.save('small_functional.h5')
 

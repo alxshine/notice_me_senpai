@@ -19,36 +19,40 @@ maps = np.load("../dataset/maps.npy")
 model = Sequential()
 
 #convolution
-model.add(Conv2D(12, 3, input_shape=(750, 1000, 1), padding='same'))
+model.add(Conv2D(6, 3, input_shape=(750, 1000, 1), padding='same'))
 model.add(Activation("relu"))
 model.add(MaxPooling2D(pool_size=(2,2), padding='same'))
 
-model.add(Conv2D(24, 3, padding='same'))
+model.add(Conv2D(12, 3, padding='same'))
 model.add(Activation("relu"))
-# model.add(MaxPooling2D(pool_size=(2,2), padding='same'))
+#model.add(MaxPooling2D(pool_size=(2,2), padding='same'))
 
-# model.add(Conv2D(256, 3, padding='same'))
-# model.add(Activation("relu"))
+#model.add(Conv2D(256, 3, padding='same'))
+#model.add(Activation("relu"))
 
 #deconvolution
-# model.add(Conv2DTranspose(256, 3, padding='same'))
-# model.add(Activation("relu"))
+#model.add(Conv2DTranspose(256, 3, padding='same'))
+#model.add(Activation("relu"))
 
-# model.add(UpSampling2D(2))
-
-model.add(Conv2DTranspose(24, 3, padding='same'))
-model.add(Activation("relu"))
-
-model.add(UpSampling2D(2))
+#model.add(UpSampling2D(2))
 
 model.add(Conv2DTranspose(12, 3, padding='same'))
 model.add(Activation("relu"))
 
+model.add(UpSampling2D(2))
+
+model.add(Conv2DTranspose(6, 3, padding='same'))
+model.add(Activation("relu"))
+
+#model.add(UpSampling2D(2))
+
+#model.add(Cropping2D((1,0)))
 model.add(Conv2DTranspose(1, 3, padding='same'))
+#model.add(Conv2D(1, 3, padding='same'))
 model.add(Activation("sigmoid"))
 
 # consider changing optimization function
-model.compile("SGD", loss="binary_crossentropy", metrics=['accuracy'])
+model.compile("SGD", loss="hinge", metrics=['accuracy'])
 
 #generate train and test sets 
 
@@ -61,7 +65,7 @@ x_train[:,:,:,0] = images[:num_samples,:,:]
 y_train[:,:,:,0] = maps[:num_samples,:,:]
 
 
-model.fit(x=x_train, y=y_train, batch_size=4)
+model.fit(x=x_train, y=y_train, batch_size=8, epochs=1)
 
 model.save('small.h5')
 

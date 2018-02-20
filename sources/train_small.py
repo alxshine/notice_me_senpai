@@ -25,9 +25,13 @@ model.add(MaxPooling2D(pool_size=(2,2), padding='same'))
 
 model.add(Conv2D(30, 3, padding='same'))
 model.add(Activation("relu"))
-model.add(MaxPooling2D(pool_size=(2,2), padding='same'))
+#model.add(MaxPooling2D(pool_size=(2,2), padding='same'))
 
 model.add(Conv2D(54, 3, padding='same'))
+model.add(Activation("relu"))
+model.add(MaxPooling2D(pool_size=(2,2), padding='same'))
+
+model.add(Conv2D(60, 3, padding='same'))
 model.add(Activation("relu"))
 model.add(MaxPooling2D(pool_size=(2,2), padding='same'))
 
@@ -37,6 +41,11 @@ model.add(MaxPooling2D(pool_size=(2,2), padding='same'))
 #deconvolution
 #model.add(Conv2DTranspose(256, 3, padding='same'))
 #model.add(Activation("relu"))
+
+#model.add(UpSampling2D(2))
+
+model.add(Conv2DTranspose(60, 3, padding='same'))
+model.add(Activation("relu"))
 
 model.add(UpSampling2D(2))
 
@@ -66,7 +75,7 @@ model.compile("SGD", loss="hinge", metrics=['accuracy'])
 
 #generate train and test sets 
 
-num_samples = 750
+num_samples = 800
 
 x_train = np.zeros([num_samples, 750, 1000, 1])
 y_train = np.zeros([num_samples, 750, 1000, 1])
@@ -75,7 +84,7 @@ x_train[:,:,:,0] = images[:num_samples,:,:]
 y_train[:,:,:,0] = maps[:num_samples,:,:]
 
 
-model.fit(x=x_train, y=y_train, batch_size=8, epochs=1)
+model.fit(x=x_train, y=y_train, batch_size=8, epochs=20, validation_split=0.07, shuffle=True)
 
 model.save('small.h5')
 

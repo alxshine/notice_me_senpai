@@ -31,6 +31,13 @@ model = load_model('small.h5')
 def image_test(imageNo):
 	imageNo -= 1
 	prediction = model.predict(x_train[imageNo:imageNo+1])
+	#im = np.zeros([750,1000])
+	#for i in range(0,750):
+	#	for j in range(0,1000):
+	#		if (prediction[0,i,j,0] >= 0.49):
+	#			im[i,j] = 0
+	#		else:
+	#			im[i,j] = 1
 	plt.figure()
 	plt.subplot(131)
 	plt.imshow(images[imageNo])
@@ -42,10 +49,13 @@ def image_test(imageNo):
 
 	plt.subplot(133)
 	plt.imshow(prediction[0,:,:,0])
+	#plt.imshow(im)
 	plt.title("prediction")
 
 	plt.show()
 
 image_test(5)
-image_test(2)
-#image_test(1)
+image_test(12)
+image_test(1)
+image_test(15)
+image_test(21)

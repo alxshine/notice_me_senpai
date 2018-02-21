@@ -179,6 +179,10 @@ if __name__ == "__main__":
         
         patterns[index, :, :, 0] = noise_image[::2,::2]
 
+    patterns = patterns.astype("float32")
+    patterns -= patterns.min()
+    patterns /= patterns.max()
+
     print("\nDone")
     print("Saving to {}".format(path))
     np.save(path, patterns)

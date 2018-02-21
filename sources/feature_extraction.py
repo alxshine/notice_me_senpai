@@ -71,6 +71,7 @@ if __name__ == "__main__":
     #normalize
     x -= x.min()
     x /= x.max()
+    x = x.astype("float32")
 
     np.save("../dataset/extracted.npy", x)
 

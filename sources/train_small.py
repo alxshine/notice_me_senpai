@@ -56,23 +56,10 @@ def cnn_model_fn(features, labels, mode):
 
     ups1 = tf.image.resize_images(dc1, [75, 100])
 
-    dc2 = tf.layers.conv2d_transpose(
-            ups1,
-            7,
-            [3,3],
-            padding='same',
-            activation=tf.nn.relu)
+    ups2 = tf.image.resize_images(ups1, [375, 500])
 
-    # ups2 = tf.image.resize_images(dc2, [375, 500])
 
-    # dc3 = tf.layers.conv2d_transpose(
-            # ups2,
-            # 3,
-            # [3,3],
-            # padding='same',
-            # activation=tf.nn.relu)
-
-    ups3 = tf.image.resize_images(dc2, [750, 1000])
+    ups3 = tf.image.resize_images(ups2, [750, 1000])
 
     dc4 = tf.layers.conv2d_transpose(
             ups3,
@@ -137,14 +124,14 @@ def main(unused_argv):
             steps=200000)
     print("Done")
 
-    print("Evaluating...")
     eval_input_fn = tf.estimator.inputs.numpy_input_fn(
             x={"x": features},
             y=maps,
             num_epochs=1,
             shuffle=False)
-    eval_results = classifier.evaluate(input_fn=eval_input_fn)
-    print("Done, results: {}".format(eval_results))
+    # print("Evaluating...")
+    # eval_results = classifier.evaluate(input_fn=eval_input_fn)
+    # print("Done, results: {}".format(eval_results))
     
     predictions = classifier.predict(eval_input_fn)
     for p in predictions:
@@ -154,12 +141,19 @@ def main(unused_argv):
         plt.title("features")
 
         plt.subplot(132)
-        plt.imshow(maps[0,:,:,0],cmap='gray')
-        plt.title("map")
-
-        plt.subplot(133)
-        plt.imshow(p['classes'][:,:,0],cmap='gray')
+        pred = p['classes']
+        pred[pred>pred.mean()] = 1
+        plt.imshow(pred[:,:,0],cmap='gray')
         plt.title("prediction")
+
+        diff = pred - maps[0]
+        plt.subplot(133)
+        plt.imshow(diff[:,:,0])
+        plt.colorbar()
+        plt.title("diff")
+        
+        incorrect_rate = np.sum(np.abs(diff))/np.prod(diff.shape)
+        print("Accuracy: {}%".format((1-incorrect_rate)*100))
 
         plt.show()
 

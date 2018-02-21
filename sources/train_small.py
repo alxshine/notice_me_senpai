@@ -6,21 +6,87 @@ import matplotlib.pyplot as plt
 def cnn_model_fn(features, labels, mode):
     input_layer = tf.reshape(features["x"], [-1, 750, 1000, 1])
 
-    conv1 = tf.layers.conv2d(
+    conv = tf.layers.conv2d(
             inputs=input_layer,
             filters=3,
             kernel_size=[3,3],
             padding='same',
-            activation=tf.nn.sigmoid)
+            activation=tf.nn.relu)
 
-    deconv1 = tf.layers.conv2d_transpose(
-            inputs = conv1,
-            filters=1,
-            kernel_size=[3,3],
+    pool1 = tf.layers.max_pooling2d(
+            conv,
+            [2,2],
+            [2,2])
+
+    conv2 = tf.layers.conv2d(
+            pool1,
+            7,
+            [3,3],
             padding='same',
-            activation=tf.nn.sigmoid)
+            activation=tf.nn.relu)
 
-    output = deconv1
+    pool2 = tf.layers.max_pooling2d(
+            conv2,
+            [5,5],
+            [5,5])
+
+    conv3 = tf.layers.conv2d(
+            pool2,
+            20,
+            [3,3],
+            padding='same',
+            activation=tf.nn.relu)
+
+    pool3 = tf.layers.max_pooling2d(
+            conv3,
+            [5,5],
+            [5,5])
+
+    flat = tf.reshape(pool3, [-1, 15*20*20])
+    dense = tf.layers.dense(flat, 15*20*20)
+    unflat = tf.reshape(dense, [-1, 15, 20, 20])
+
+
+    dc1 = tf.layers.conv2d_transpose(
+            unflat,
+            20,
+            [3,3],
+            padding='same',
+            activation=tf.nn.relu)
+
+    ups1 = tf.image.resize_images(dc1, [75, 100])
+
+    dc2 = tf.layers.conv2d_transpose(
+            ups1,
+            7,
+            [3,3],
+            padding='same',
+            activation=tf.nn.relu)
+
+    # ups2 = tf.image.resize_images(dc2, [375, 500])
+
+    # dc3 = tf.layers.conv2d_transpose(
+            # ups2,
+            # 3,
+            # [3,3],
+            # padding='same',
+            # activation=tf.nn.relu)
+
+    ups3 = tf.image.resize_images(dc2, [750, 1000])
+
+    dc4 = tf.layers.conv2d_transpose(
+            ups3,
+            1,
+            [3,3],
+            padding='same',
+            activation=tf.nn.relu)
+
+
+    norm = tf.div(
+            tf.subtract(dc4, tf.reduce_min(dc4)),
+            tf.subtract(tf.reduce_max(dc4), tf.reduce_min(dc4)))
+
+    output = norm
     
     predictions = {
             "classes": output,
@@ -63,7 +129,7 @@ def main(unused_argv):
             x={"x": features},
             y=maps,
             batch_size=2,
-            num_epochs=100,
+            num_epochs=200,
             shuffle=True)
     print("Training classifier...")
     classifier.train(

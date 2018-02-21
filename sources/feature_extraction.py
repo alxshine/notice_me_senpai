@@ -64,13 +64,18 @@ if __name__ == "__main__":
         im = im.sum(axis=2) / 3 / im.max()
         im = im[::resample_rate,::resample_rate]
 
-        extracted[index] = spliceDetection(im)
+        detected = spliceDetection(im)
+        detected -= detected.min()
+        mean = detected.mean()
+        print("mean: {}".format(mean))
+        detected[detected<mean] = 0
+        detected[detected>0] = 1
+        print("sum: {}".format(detected.sum()))
+
+        extracted[index] = detected.astype("float32")
 
     x = np.zeros([num_images, 750, 1000, 1])
     x[:,:,:,0] = extracted
-    #normalize
-    x -= x.min()
-    x /= x.max()
     x = x.astype("float32")
 
     np.save("../dataset/extracted.npy", x)

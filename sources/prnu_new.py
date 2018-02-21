@@ -9,28 +9,6 @@ import pywt
 from sklearn.feature_extraction import image
 from numpy import unravel_index
 
-try:
-    mode = int(sys.argv[1])
-except IndexError:
-    mode = 4
-
-try:
-    index = int(sys.argv[2])
-except IndexError:
-    index = 5
-
-
-# Load test image
-try:
-    im = scipy.ndimage.imread("../dataset/dev-dataset-forged/dev_{:04d}.jpg".format(index))
-except IOError:
-    im = scipy.ndimage.imread("../dataset/dev-dataset-forged/dev_{:04d}.tif".format(index))
-truth_map = scipy.ndimage.imread("../dataset/dev-dataset-maps/dev_{:04d}.bmp".format(index))
-
-# convert to grayscale
-im = im.astype('float32')
-arr = np.array(im)
-arr = arr.sum(axis=2) / 3 / arr.max()
 
 # single level discrete wavelet transformation 2D for denoising
 # cA = approximation, cH = horizontal detail, cV = vertical detail, cD = diagonal detail
@@ -43,7 +21,7 @@ arr = arr.sum(axis=2) / 3 / arr.max()
 #		also check when to apply second denoising filter - and if other filter than wiener might be better 
 #		try multilevel decomposition instead
 #
-# different possibilities for handeling coeffs denoted in mode:
+# different possibilities for handling coeffs denoted in mode:
 # 	0	-	filter picture after inverse dwt 
 #	1	-	filter each one seperately
 # 	2	-	only filter with wavelets	
@@ -173,12 +151,35 @@ def patch_image(im, pX, pY):
 	center_pixels = center_pixels.reshape(1500,2000)
 	return patches, center_pixels
 
+if __name__ == "__main__":
+    path = "../dataset/patterns.npy"
 
-denoised = denoise(arr,mode)
-noise_image = np.subtract(arr,denoised)
-#K1 = camera_noise(1,5,1500,2000,0,1)
-#noises = compair_camera_noise(4,5,1500,2000,0)
-#print(np.array_equal(noises[0],K1))
-patched_image, center_pixels = patch_image(denoised,3,3)
-#print(np.array_equal(denoised,center_pixels))
+    try:
+        mode = int(sys.argv[1])
+    except IndexError:
+        mode = 0
 
+    patterns = np.zeros([800, 750, 1000, 1])
+
+    for index in range(800):
+        print("Extracting noise for image {}\r".format(index+1), end="")
+        # Load test image
+        try:
+            im = scipy.ndimage.imread("../dataset/dev-dataset-forged/dev_{:04d}.jpg".format(index+1))
+        except IOError:
+            im = scipy.ndimage.imread("../dataset/dev-dataset-forged/dev_{:04d}.tif".format(index+1))
+
+        # convert to grayscale
+        im = im.astype('float32')
+        arr = np.array(im)
+        arr = arr.sum(axis=2) / 3 / arr.max()
+
+        denoised = denoise(arr,mode)
+        noise_image = np.subtract(arr,denoised)
+        
+        patterns[index, :, :, 0] = noise_image[::2,::2]
+
+    print("\nDone")
+    print("Saving to {}".format(path))
+    np.save(path, patterns)
+    print("Done")

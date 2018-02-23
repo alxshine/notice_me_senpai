@@ -8,93 +8,70 @@ def cnn_model_fn(features, labels, mode):
 
     c1 = tf.layers.conv2d(
             input_layer,
-            64444,
-            [3,3],
-            padding='same',
-            activation=tf.nn.relu)
-
-    c11 = tf.layers.conv2d(
-            c1,
-            64,
+            8,
             [3,3],
             padding='same',
             activation=tf.nn.relu)
 
     p1 = tf.layers.max_pooling2d(
-            c11,
+            c1,
             [2,2],
-            [2,2],
-            padding='same')
+            [2,2])
 
     c2 = tf.layers.conv2d(
             p1,
-            128,
-            [3,3],
-            padding='same',
-            activation=tf.nn.relu)
-
-    c21 = tf.layers.conv2d(
-            c2,
-            128,
-            [3,3],
+            16,
+            [5,5],
             padding='same',
             activation=tf.nn.relu)
 
     p2 = tf.layers.max_pooling2d(
-            c21,
+            c2,
             [5,5],
-            [5,5],
-            padding='same')
+            [5,5])
 
     c3 = tf.layers.conv2d(
             p2,
-            256,
-            [3,3],
-            padding='same',
-            activation=tf.nn.relu)
-
-    c31 = tf.layers.conv2d(
-            c3,
-            64,
+            32,
             [3,3],
             padding='same',
             activation=tf.nn.relu)
 
     p3 = tf.layers.max_pooling2d(
-            c31,
+            c3,
             [5,5],
-            [5,5],
-            padding='same')
+            [5,5])
 
-    flat = tf.reshape(p3, [-1, 64*15*20])
-    d1 = tf.layers.dense(flat, 64*15*20)
-    d2 = tf.layers.dense(d1, 64*15*20)
-    d3 = tf.layers.dense(d2, 64*15*20)
-    d4 = tf.layers.dense(d3, 64*15*20)
-    unflat = tf.reshape(d4, [-1, 64, 15, 20])
+    c4 = tf.layers.conv2d(
+            p3,
+            3,
+            [3,3],
+            padding='same',
+            activation=tf.nn.relu)
 
-    dc1 = tf.layers.conv2d_transpose(
+    flat = tf.reshape(c4, [-1, 15*20*3])
+    d1 = tf.layers.dense(flat, 15*20*3)
+    d2 = tf.layers.dense(d1, 15*20*3)
+    unflat = tf.reshape(d2, [-1, 3, 15, 20])
+
+
+    d1 = tf.layers.conv2d_transpose(
             unflat,
             1,
             [3,3],
             padding='same',
             activation=tf.nn.relu)
 
-    ups3 = tf.image.resize_images(dc1, [750, 1000])
+    u1 = tf.image.resize_images(
+            d1,
+            [750, 1000])
 
-    dc4 = tf.layers.conv2d_transpose(
-            ups3,
-            1,
-            [3,3],
-            padding='same',
-            activation=tf.nn.relu)
+    last = u1
+    # norm = tf.div(
+            # tf.subtract(last, tf.reduce_min(last)),
+            # tf.subtract(tf.reduce_max(last), tf.reduce_min(last)))
 
-
-    norm = tf.div(
-            tf.subtract(dc4, tf.reduce_min(dc4)),
-            tf.subtract(tf.reduce_max(dc4), tf.reduce_min(dc4)))
-
-    output = norm
+    output = last
 
     predictions = {
             "classes": output,
@@ -127,17 +104,22 @@ def main(unused_argv):
 
     #load training data
     print("Loading features...")
-    features = np.load("../dataset/patterns.npy")
+    features = np.load("../dataset/correlations.npy")
+    temp = np.zeros([10,750,1000,1])
+    temp[:,:,:,0] = features[:,::2,::2]
+    features = temp.astype('float32')
+    print(features.shape)
     print("Done")
     print("Loading truth maps...")
-    maps = np.load("../dataset/maps.npy")
+    maps = np.load("../dataset/maps.npy").astype('float32')[:10]
+    print(maps.shape)
     print("Done")
 
     train_input_fn = tf.estimator.inputs.numpy_input_fn(
-            x={"x": features[:780]},
-            y=maps[:780],
+            x={"x": features[1:]},
+            y=maps[1:],
             batch_size=3,
-            num_epochs=1,
+            num_epochs=10,
             shuffle=True)
     print("Training classifier...")
     classifier.train(
@@ -161,8 +143,7 @@ def main(unused_argv):
     index = 0
     for p in predictions:
         pred = p['classes']
-        pred[pred>pred.mean()] = 1
-        pred[pred<1] = 0
+        print(pred)
 
         incorrect_pixels += np.count_nonzero(pred-maps[index:index+1])
         total_pixels += np.prod(pred.shape)

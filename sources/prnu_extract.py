@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 
 camera_patterns = [np.load('cam{}_pattern.npy'.format(i+1)) for i in range(4)]
 
-all_corrs = np.zeros([10,1500,2000])
+all_corrs = np.zeros([10,1500,2000,1])
 for image_index in range(1, 11):
     try:
         test_image = scipy.ndimage.imread('../dataset/dev-dataset-forged/dev_{:04d}.tif'.format(image_index))
@@ -49,6 +49,6 @@ for image_index in range(1, 11):
             correlation[y,x] = max_coeff
 
 
-    all_corrs[image_index-1] = correlation
+    all_corrs[image_index-1,:,:,0] = correlation
 
-np.save("../dataset/correlations.npy", all_corrs)
+np.save("../dataset/correlations.npy", all_corrs)[:,::2,::2,:]

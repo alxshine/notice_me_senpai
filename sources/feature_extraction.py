@@ -51,7 +51,7 @@ if __name__ == "__main__":
     resample_rate = 2
     test = scipy.ndimage.imread("../dataset/dev-dataset-forged/dev_0001.tif")
     test = test[::resample_rate, ::resample_rate]
-    extracted = np.zeros((800, test.shape[0], test.shape[1]))
+    extracted = np.zeros((num_images, test.shape[0], test.shape[1]))
 
     for index in range(num_images):
         print("Extracting features from image {:04d}\r".format(index), end="")
@@ -67,14 +67,12 @@ if __name__ == "__main__":
         detected = spliceDetection(im)
         detected -= detected.min()
         mean = detected.mean()
-        print("mean: {}".format(mean))
         detected[detected<mean] = 0
         detected[detected>0] = 1
-        print("sum: {}".format(detected.sum()))
 
         extracted[index] = detected.astype("float32")
 
-    x = np.zeros([num_images, 750, 1000, 1])
+    x = np.zeros([num_images, test.shape[0], test.shape[1], 1])
     x[:,:,:,0] = extracted
     x = x.astype("float32")
 

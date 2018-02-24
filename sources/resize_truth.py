@@ -23,4 +23,4 @@ y[:,:,:,0] = resized
 y -= y.min()
 y /= y.max()
 
-np.save("../dataset/maps.npy", y)
+np.save("../dataset/maps.npy", y[:10])

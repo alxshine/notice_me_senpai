@@ -1,11 +1,11 @@
 import numpy as np
 import scipy.ndimage
 
-num_images = 800
+num_images = 10
 
 width = 2000
 height = 1500
-resample_rate = 2
+resample_rate = 1
 test = scipy.ndimage.imread("../dataset/dev-dataset-maps/dev_0001.bmp")
 test = test[::resample_rate, ::resample_rate]
 resized = np.zeros((num_images, test.shape[0], test.shape[1]))
@@ -23,4 +23,4 @@ y[:,:,:,0] = resized
 y -= y.min()
 y /= y.max()
 
-np.save("../dataset/maps.npy", y[:10])
+np.save("../dataset/maps.npy", y)

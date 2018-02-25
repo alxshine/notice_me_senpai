@@ -3,6 +3,41 @@ import scipy.ndimage
 import scipy.signal
 import matplotlib.pyplot as plt
 
+def filter_edge_artifacts(im, top, bottom):
+    edge_depths = np.zeros([bottom-top])
+    for row in range(top, bottom):
+        column = 0
+        while column < im.shape[1] and im[row, column] == 1:
+            column += 1
+        edge_depths[row-top] = column
+
+    edge_threshold = int(np.median(edge_depths))
+    im[:edge_threshold,:] = 0
+    im[:,:edge_threshold] = 0
+    im[-edge_threshold:,:] = 0
+    im[:,-edge_threshold:] = 0
+
+def do_kernel_magic(im):
+    im = scipy.signal.convolve2d(im, gaussian_kernel, mode='same')
+    for i in range(100):
+        im = scipy.signal.convolve2d(im, mean_kernel_small, mode='same')
+    for i in range(100):
+        im = scipy.signal.convolve2d(im, mean_kernel_large, mode='same')
+
+    return im
+
+
+n = 3
+mean_kernel_small = np.ones([n,n])/n**2
+n = 5
+mean_kernel_large = np.ones([n,n])/n**2
+gaussian_kernel = np.array(
+        [[0.003765, 0.015019, 0.025792, 0.015019, 0.003765],
+         [0.015019, 0.059912, 0.094907, 0.059912, 0.015019],
+         [0.023792, 0.094907, 0.150342, 0.094907, 0.023792],
+         [0.015019, 0.059912, 0.094907, 0.059912, 0.015019],
+         [0.003765, 0.015019, 0.025792, 0.015019, 0.003765]])
+
 print("loading features")
 features = np.load("../dataset/correlations.npy")
 print("done")
@@ -10,40 +45,55 @@ print("loading maps")
 maps = np.load("../dataset/maps.npy")
 print("done")
 
-index = 5
+accuracies = 0
+baselines = 0
 
-im = features[index]
-im[np.isnan(im)] = im[0,0]
-im = np.abs(im)
-m = maps[index,:,:,0]
+indices = range(10)
+for index in indices:
+    print("image {}".format(index+1))
 
-#do stuff here
-for i in range(30):
-    im = scipy.ndimage.gaussian_filter(im, 0.6)
+    im = features[index]
+    im[np.isnan(im)] = im[0,0]
+    im = np.abs(im)
+    im -= im.min()
+    im /= im.max()
+    m = maps[index,:,:,0]
+    m -= m.min()
+    m /= m.max()
 
-n = 3
-mean_kernel_small = np.ones([n,n])/n**2
+    im = do_kernel_magic(im)
 
-n = 7
-mean_kernel_large = np.ones([n,n])/n**2
+    #thresholding
+    threshold = im.mean()*0.97
+    result = np.zeros_like(im)
+    result[im<threshold] = 1
 
-for i in range(50):
-    im = scipy.signal.convolve2d(im, mean_kernel_small, mode='same')
-    im = scipy.signal.convolve2d(im, mean_kernel_large, mode='same')
+    #fix the edge artifacts
+    top = 400
+    bottom = 1400
+    filter_edge_artifacts(result, top, bottom)
 
-mean = im.mean()
-print("Mean: {}".format(mean))
-result = np.zeros_like(im)
-result[im<mean] = 1
-# result = im
+    #calculate accuracy
+    incorrect_rate = np.sum(np.abs(result-m))/np.prod(result.shape)
+    accuracy = (1-incorrect_rate)*100
+    accuracies += accuracy
 
-plt.figure()
-plt.subplot(121)
-plt.imshow(result, cmap='gray')
-plt.title("result")
+    baseline = (1-np.sum(m)/np.prod(result.shape))*100
+    baselines += baseline
+    print("accuracy: {:4.2f}%".format(accuracy))
+    print("baseline: {:4.2f}%".format(baseline))
 
-plt.subplot(122)
-plt.imshow(m)
-plt.title("map")
 
-plt.show()
+    # plt.figure()
+    # plt.subplot(121)
+    # plt.imshow(result, cmap='gray')
+    # plt.title("result")
+
+    # plt.subplot(122)
+    # plt.imshow(m)
+    # plt.title("map")
+
+    # plt.show()
+
+print("Average accuracy: {}".format(accuracies/len(indices)))
+print("Average baseline: {}".format(baselines/len(indices)))

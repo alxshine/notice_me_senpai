@@ -148,6 +148,46 @@ def get_patch_at(im, y, x, patch_half_height, patch_half_width):
     patch[patch_half_height-offset_top:patch_half_height+offset_bottom+1, patch_half_width-offset_left:patch_half_width+offset_right+1] = im[y-offset_top:y+offset_bottom+1, x-offset_left:x+offset_right+1]
     return patch
 
+camera_patterns = None
+def get_best_image_correlation(im):
+    global camera_patterns
+
+    #initialize if necessary
+    if type(camera_patterns) == type(None):
+        camera_patterns = np.load('cam_patterns.npy')
+
+    #get the image noise
+    image_noise = im - denoise(im, 0)
+    image_noise -= image_noise.min()
+    image_noise /= image_noise.max()
+
+    #find the best prnu pattern
+    corrs = [np.corrcoef(camera_patterns[i].flatten(), image_noise.flatten())[0,1] for i in range(camera_patterns.shape[0])]
+    cam_pattern = camera_patterns[np.argmax(corrs)]
+
+    
+    #get the correlation between noise and the camera pattern
+    correlation = np.zeros_like(cam_pattern)
+    im_height = cam_pattern.shape[0]
+    im_width = cam_pattern.shape[1]
+    patch_half_height = 1
+    patch_half_width = 1
+    search_window_half_size = 20
+
+    print("Generating correlation map")
+    for y in range(im_height):
+        #print the progress
+        print("{:02.0f}% done\r".format(y/im_height*100), end='')
+        for x in range(im_width):
+            noise_patch = get_patch_at(image_noise, y, x, patch_half_height, patch_half_width)
+            cam_patch = get_patch_at(cam_pattern, y, x, patch_half_height, patch_half_width)
+            max_coeff = np.corrcoef(noise_patch.flatten(), cam_patch.flatten())[0,1]
+            correlation[y,x] = max_coeff
+
+    print()
+
+    return correlation
+
 if __name__ == "__main__":
     path = "../dataset/patterns.npy"
 

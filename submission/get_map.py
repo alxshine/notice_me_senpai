@@ -87,6 +87,9 @@ if __name__ == '__main__':
         os.mkdir(target_dir)
 
     for f in os.listdir(source_dir):
+        if os.path.isdir(f):
+            continue
+
         print("generating estimate for {}".format(f))
         #get base name of f
         basename = os.path.splitext(f)[0]

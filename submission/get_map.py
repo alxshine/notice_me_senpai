@@ -87,10 +87,15 @@ if __name__ == '__main__':
         os.mkdir(target_dir)
 
     for f in os.listdir(source_dir):
+        #check if we have already generated the map for this image
+        target_path = os.path.join(target_dir, target_name)
+        if os.path.exists(target_path):
+            continue
+
         print("generating estimate for {}".format(f))
         #get base name of f
         basename = os.path.splitext(f)[0]
         target_name = basename + '.bmp'
 
         result = find_spliced_areas(os.path.join(source_dir, f))
-        scipy.misc.imsave(os.path.join(target_dir, target_name), result)
+        scipy.misc.imsave(target_path, result)

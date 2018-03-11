@@ -80,7 +80,7 @@ if __name__ == '__main__':
     # Change source and target image folders here
     #
     #############################################
-    source_dir = "demo_images"
+    source_dir = "../demo_images"
     target_dir = "DEMO_RESULTS"
 
     if not os.path.isdir(target_dir):
@@ -98,9 +98,9 @@ if __name__ == '__main__':
         #check if we have already generated the map for this image
         target_path = os.path.join(target_dir, target_name)
         if os.path.exists(target_path):
+            print("File already exists, skipping")
             continue
 
 
-        # result = find_spliced_areas(os.path.join(source_dir, f))
-        result = scipy.ndimage.load(f)
+        result = find_spliced_areas(os.path.join(source_dir, f))
         scipy.misc.imsave(target_path, result)
